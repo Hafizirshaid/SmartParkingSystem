@@ -28,14 +28,9 @@ const int sensor_1 = 6;
 const int sensor_2 = 7;
 
 const int buttonPin0 = A0;
+
 //this is used for DEBUGING
 #include <SoftwareSerial.h>
-#include <Servo.h> 
-
-Servo myservo;  // create servo object to control a servo 
-// a maximum of eight servo objects can be created 
-
-int pos = 0;    // variable to store the servo position 
 
 //SoftwareSerial Debug(4, 3); // RX, TX
 
@@ -72,24 +67,24 @@ int get_sensor_two()
 //this function to check the sensors that tell us the car do really leaved 
 int check_car_leave()
 {
-  // Debug.println("Checking car leaving\n\rwaiting until someone cut sensors line ");
+ // Debug.println("Checking car leaving\n\rwaiting until someone cut sensors line ");
 
   //wait unitl someone cut the sensor lines 
   while((get_sensor_one() == HIGH) && (get_sensor_two() == HIGH));
 
-  //  Debug.println("one of the two sensors became cut!");
+//  Debug.println("one of the two sensors became cut!");
 
   //here the car wanna enter the garage 
   if((get_sensor_one() == HIGH) && (get_sensor_two() == LOW))
   {
-    //  Debug.println("Waiting until the car leave the other sensor !");
+  //  Debug.println("Waiting until the car leave the other sensor !");
 
     //wait unitl the second sensor become 1
     while(get_sensor_two() == LOW); 
 
     while(get_sensor_one() == LOW);
 
-    //  Debug.println("hay! the car leaved, thanks God!");
+  //  Debug.println("hay! the car leaved, thanks God!");
   }
   else if((get_sensor_one() == LOW) && (get_sensor_two() == HIGH))
   {
@@ -117,19 +112,6 @@ void open_door()
   //this is also must close when the car pass the door sensors 
   //Serial.print("Car is Leaving");
   //write the code to open the door 
-  for(pos = 0; pos < 90; pos += 1)  // goes from 0 degrees to 180 degrees 
-  {                                  // in steps of 1 degree 
-    myservo.write(pos);              // tell servo to go to position in variable 'pos' 
-    delay(20);                       // waits 15ms for the servo to reach the position 
-  } 
-
-  delay(2000);
-
-  for(pos = 90; pos>=1; pos-=1)     // goes from 180 degrees to 0 degrees 
-  {                                
-    myservo.write(pos);              // tell servo to go to position in variable 'pos' 
-    delay(20);                       // waits 15ms for the servo to reach the position 
-  } 
 }
 
 
@@ -173,15 +155,14 @@ String read_RFID()
 void setup()
 {
   Serial.begin(9600);
-  // Debug.begin(9600);
-
-  myservo.attach(9);  // attaches the servo on pin 9 to the servo object 
-  mySerial.begin(9600);
-
-  // pinMode(buttonPin0, OUTPUT);
-  //  attachInterrupt(button,change_button_state , LOW);
-  // pinMode(sensor_1, INPUT);
-  //  pinMode(sensor_2, INPUT);
+ // Debug.begin(9600);
+  
+mySerial.begin(9600);
+  
+ // pinMode(buttonPin0, OUTPUT);
+//  attachInterrupt(button,change_button_state , LOW);
+// pinMode(sensor_1, INPUT);
+//  pinMode(sensor_2, INPUT);
 }
 
 void change_button_state2()
@@ -216,19 +197,19 @@ int Program_State = 0;
 
 /*
 void loop()
- {
- 
- }*/
+{
+
+}*/
 
 
 //main MCU loop 
 void loop()
 {
-  // Debug.println("*********************************************************************");
+ // Debug.println("*********************************************************************");
   //check program state, if 0 then wait computer to connect 
   if(Program_State == 0)
   {
-    // Debug.println("Program Start...");
+   // Debug.println("Program Start...");
     //Debug.println("Wait Computer To connect...");
 
     //wait until computer connect and send char 'A' 
@@ -240,7 +221,7 @@ void loop()
     //if computer send A then all things is right 
     if(start_command == 'A')
     {
-      // Debug.println("PC is Ready...");
+     // Debug.println("PC is Ready...");
       Serial.print("A");
 
       //set program state 1 that means the computer send A 
@@ -248,7 +229,7 @@ void loop()
     }
     else
     {
-      // Debug.println("Problem in Starting the program...");
+     // Debug.println("Problem in Starting the program...");
     }
   }
   else
@@ -256,8 +237,8 @@ void loop()
 
 
     Serial.flush();
-    // Debug.println("****************************");
-    // Debug.println("Start of loop ");
+   // Debug.println("****************************");
+   // Debug.println("Start of loop ");
     //Serial.print("****************");
     //this is for simulation issues
     //read RFID 
@@ -265,58 +246,70 @@ void loop()
 
 
     // chek_Identity();
-    while(!mySerial.available());
-
-    for(int x=0;x<16;x++)
-      //while(mySerial.available())
-    {
-
-      data1[x]=mySerial.read();
-      delay(10);
-      //  Serial.write(data1[x]);
-      //if (data1[i] != aya[i]) a_card = 0;
-      //if (data1[i] != mais[i]) m_card = 0;
-
-      //i++;
-
-    }
-
-
-    for(int x=0;x<16;x++)
-    {
-      Serial.write(data1[x]);
-
-    }
+   while(!mySerial.available());
+    
+  for(int x=0;x<16;x++)
+     //while(mySerial.available())
+     {
+     
+     data1[x]=mySerial.read();
+     //delay(10);
+	 
+	 while(!mySerial.available());
+   //  Serial.write(data1[x]);
+     //if (data1[i] != aya[i]) a_card = 0;
+     //if (data1[i] != mais[i]) m_card = 0;
+     
+     //i++;
+     
+     }
+     
+	 //send the RFID to computer 
+      
+  for(int x=1;x<11;x++)
+     {
+    Serial.write(data1[x]);
+       
+     }
     //Serial.print("*************");
+
     //send RFID to the computer 
     //Serial.print("001100110011");
-    //   Debug.println("Start Debugging...");
-    //Debug.println("Waiting for a command...");
+
+    /*
+    if(button_state == 1)
+     {
+     Serial.print("001100110011");
+     }*/
+
+ //   Debug.println("Start Debugging...");
+//Debug.println("Waiting for a command...");
     //wait until computer send the command 
     while(!Serial.available());
 
     //read the command from the compter 
     char command = (char) Serial.read();
 
-    //Debug.print("I have a command : ");
-    //   Debug.println(command);
+//Debug.print("I have a command : ");
+ //   Debug.println(command);
 
     //check the command and execute the operation 
     if(command == 'O')
     {
       //open the door 
-      //   Debug.println("Open the Door");
-      open_door();
+   //   Debug.println("Open the Door");
+     // open_door();
     }
     else if(command == 'D')
     {
       //don't open the door 
-      // Debug.println("Don't Open the door");
+     // Debug.println("Don't Open the door");
       //Serial.println("don't open the door");
     }
     else if(command == 'L')
     {
-      //  Debug.println("wait car to leave");
+    //  Debug.println("wait car to leave");
+
       //wait until the car leaving 
       //must check leaving sensor if the car really leave the garage 
       int car_state = check_car_leave();
@@ -324,24 +317,24 @@ void loop()
       {
         //send ack to the computer to do his works 
         Serial.write("G");
-        //    Debug.println("leaved");
+    //    Debug.println("leaved");
       }
       else
       {
         //send negative ack to pc to tell him that this kid is kidding 
         // Serial.print("Not OK");
-        //   Debug.println("Car didn't leave");
+     //   Debug.println("Car didn't leave");
       }
     }
     else if(command == 'R')
     {
-      // Debug.println("error in sending RFID to PC");
+     // Debug.println("error in sending RFID to PC");
       //this means that the RFID is less than 12 char so resend RFID 
     }
     else if(command == 'S')
     {
       //shut down the program and wait until PC connect again 
-      //   Debug.println("Stop the Program..."); 
+   //   Debug.println("Stop the Program..."); 
 
       //stop the program 
       Program_State = 0;
@@ -354,15 +347,16 @@ void loop()
      }*/
     else 
     {
-
+      
       //unknown error 
       //Serial.print(command);
       //Serial.println("UNKNOWN ERROR!");
-      // Debug.println("Unknown Eroor");
+     // Debug.println("Unknown Eroor");
     }
-    //  Debug.println("End of Loop ");
-    //  Debug.println("****************************");
+  //  Debug.println("End of Loop ");
+  //  Debug.println("****************************");
     Serial.flush();
     //delay(1000);
   }
 }
+

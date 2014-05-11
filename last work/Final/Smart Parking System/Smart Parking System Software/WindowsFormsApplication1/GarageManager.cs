@@ -56,11 +56,6 @@ namespace WindowsFormsApplication1
         private SerialPort serial_port;
 
         /// <summary>
-        /// 
-        /// </summary>
-        private double DollarPerMinuit = 5.0 / 60;
-
-        /// <summary>
         /// available serial ports on this PC 
         /// </summary>
         string[] AvailablePorts;
@@ -143,23 +138,23 @@ namespace WindowsFormsApplication1
 
             // string RFID = serial_port.ReadExisting();
             string RFID = "";
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 16; i++)
             {
                 RFID += (char)serial_port.ReadChar();
             }
 
-            MessageBox.Show(RFID);
+           // MessageBox.Show(RFID);
             string RF = "";
-            for (int i = 0; i < 10; i++)
+            for (int i =2 ; i < 14; i++)
             {
                 RF += RFID[i];
+
             }
 
-            //MessageBox.Show(RF + " " + RF.Length);
-            // ProgState.AppendText("RFID is " + RFID);
-
+            MessageBox.Show(RF + " " + RF.Length);
+            //ProgState.AppendText("RFID is " + RFID);
             // richTextBox1.AppendText(RFID + "\n");
-            if (RF.Length == 10)
+            if (RF.Length == 12)
             {
                 //check this RFID 
                 CheckRFIDInDatabase(RF);
@@ -249,7 +244,7 @@ namespace WindowsFormsApplication1
             //State.Text = "Checking RF in DB";
 
             //string ProgStateString = "";
-
+            
             //open db connection
             DatabaseConnection.Open();
 
@@ -266,7 +261,7 @@ namespace WindowsFormsApplication1
             {
                 //update current user state here ***
 
-                UpdateUserInformation(UserReader.GetString(1), UserReader.GetString(4), UserReader.GetString(2),
+                UpdateUserInformation(UserReader.GetString(1), UserReader.GetString(4), UserReader.GetString(2), 
                     UserReader.GetString(5), UserReader.GetString(6));
 
                 //check if this RFID is in login table 
@@ -276,7 +271,7 @@ namespace WindowsFormsApplication1
                 //this is done by checking the RFID in login table, if it exists there, that means the cas is already in the 
                 //garage, otherwise it want to enter the garage 
                 string SQLQueryLogin = String.Format("select * from login where RFID='{0}'", RFID);
-
+                
                 MySqlCommand check_login_table = new MySqlCommand(SQLQueryLogin, DatabaseConnection);
 
                 MySqlDataReader loginReader = check_login_table.ExecuteReader();
@@ -288,19 +283,15 @@ namespace WindowsFormsApplication1
                     //so send to the MCU command 'l' means wait until the car leave the garage and then 
                     //insert to the table garage entries its values 
                     loginReader.Close();
-                    ProgState.AppendText("the car is in the garage and wants to leave \n");
+                   ProgState.AppendText("the car is in the garage and wanna leave \n");
 
                     //send to MCU leave command 
-
-                    /////TODO change this to O 
                     serial_port.Write("L");
 
                     //wait until good is received 
 
-                    ///////TODO make state equals to G
                     char state = (char)serial_port.ReadChar();
-                    ProgState.AppendText("I Have got a char " + state + "\n");
-
+                    ProgState.AppendText("I Have got a char " + state);
                     //check the state, if the car leave the garage 
                     if (state == 'G')
                     {
@@ -311,10 +302,10 @@ namespace WindowsFormsApplication1
                         DateTime LoginDate = DateTime.Now;
                         DateTime LeaveDate = DateTime.Now;
 
-                        ProgState.AppendText("Calculating Money... \n");
+                          ProgState.AppendText("Calculating Money \n");
                         //car leaved the garage
                         //get enter date from login table 
-                        string GetEnterDateQuery = string.Format("select enter_time_date from login where RFID='{0}'",
+                        string GetEnterDateQuery = string.Format("select enter_time_date from login where RFID='{0}'", 
                                                                 RFID);
                         MySqlCommand GetEnterDateCommand = new MySqlCommand(GetEnterDateQuery, DatabaseConnection);
 
@@ -344,7 +335,7 @@ namespace WindowsFormsApplication1
                             string DeleteCarFromLoginTableSQL = String.Format("delete from login where RFID='{0}'",
                                 RFID);
 
-                            MySqlCommand DeleteCarCommand = new MySqlCommand(DeleteCarFromLoginTableSQL,
+                            MySqlCommand DeleteCarCommand = new MySqlCommand(DeleteCarFromLoginTableSQL, 
                                                         DatabaseConnection);
 
                             DeleteCarCommand.ExecuteNonQuery();
@@ -356,7 +347,7 @@ namespace WindowsFormsApplication1
 
                             ///////// here you must check if the user paid or not 
 
-                            string CheckPaidQuery = String.Format("select paid_or_not from users where RFID='{0}'",
+                            string CheckPaidQuery = String.Format("select paid_or_not from users where RFID='{0}'", 
                                                         RFID);
 
                             MySqlCommand CheckPaidQueryCommand = new MySqlCommand(CheckPaidQuery, DatabaseConnection);
@@ -373,13 +364,13 @@ namespace WindowsFormsApplication1
                             {
 
                                 //calculate the discount
-                                discount = Math.Round(CalculateMoney(LoginDate, LeaveDate));
-
+                                discount = CalculateMoney(LoginDate, LeaveDate);
+                 
                                 //get the old credit money value for this user 
-                                var GetOldCreditSQL = String.Format("select credit_money from users where RFID='{0}'",
+                                var GetOldCreditSQL = String.Format("select credit_money from users where RFID='{0}'", 
                                                                     RFID);
 
-                                MySqlCommand GetOldCreditCommad = new MySqlCommand(GetOldCreditSQL,
+                                MySqlCommand GetOldCreditCommad = new MySqlCommand(GetOldCreditSQL, 
                                                     DatabaseConnection);
 
                                 MySqlDataReader GetOldCreditReader = GetOldCreditCommad.ExecuteReader();
@@ -390,24 +381,26 @@ namespace WindowsFormsApplication1
                                 double OldCredit = Double.Parse(GetOldCreditReader.GetString(0));
 
                                 GetOldCreditReader.Close();
-
-                                ProgState.AppendText("old credit : " + OldCredit + " NIS\n");
+                                
+                                ProgState.AppendText("old cridit \n" + OldCredit + "\n");
 
                                 double NewCreditMoneyValue = OldCredit - discount;
-                                ProgState.AppendText("New Credit Money : " + NewCreditMoneyValue + " NIS\n");
-
+                                ProgState.AppendText("discount \n" + NewCreditMoneyValue + "\n");
+                                
                                 if (NewCreditMoneyValue >= 0)
                                 {
                                     //Update here 
-                                    var UpdateNewCreditSQL =
-                                        String.Format("update users set credit_money={0} where RFID='{1}'",
+                                    var UpdateNewCreditSQL = 
+                                        String.Format("update users set credit_money={0} where RFID='{1}'", 
                                                         NewCreditMoneyValue, RFID);
                                     MySqlCommand UpdateNewCreditCommand = new MySqlCommand(UpdateNewCreditSQL,
                                                     DatabaseConnection);
 
                                     UpdateNewCreditCommand.ExecuteNonQuery();
 
-                                    MessageBox.Show("Updated : " + discount + " NIS \n");
+                                   
+
+                                    MessageBox.Show("Updated " + discount);
                                 }
                                 else
                                 {
@@ -418,16 +411,16 @@ namespace WindowsFormsApplication1
 
                             }
 
-                            ProgState.AppendText("Leave Date is " + LeaveDate + "\ndiscount : " + discount + " NIS\n");
+                            ProgState.AppendText("Leave Date is " + LeaveDate + "  Duration " + discount + "\n");
                             ProgState.AppendText("Duration is " + TakeDateTimeDifference(LeaveDate, LoginDate) + "\n");
-
-
+                         
+                           
                             //insert into garage_entries the leave 
                             string InsertIntoGarageEntriesQuery =
-                                String.Format("insert into garage_entries values(0,'{0}','{1}','{2}',{3})",
+                                String.Format("insert into garage_entries values(0,'{0}','{1}','{2}',{3})", 
                                                 LoginDateString, LeaveDateString, RFID, discount);
 
-                            MySqlCommand InsertIntoGarageCommand = new MySqlCommand(InsertIntoGarageEntriesQuery,
+                            MySqlCommand InsertIntoGarageCommand = new MySqlCommand(InsertIntoGarageEntriesQuery, 
                                                 DatabaseConnection);
 
                             InsertIntoGarageCommand.ExecuteNonQuery();
@@ -451,10 +444,10 @@ namespace WindowsFormsApplication1
                 //the car wants to enter the garage 
                 else
                 {
-
+                    
                     loginReader.Close();
 
-                    ProgState.AppendText("the car wants to enter the garage , openning the door \n");
+                    ProgState.AppendText("the car wanna enter the garage , open the door \n");
                     //here open the door 
                     OpenTheDoor();
 
@@ -464,8 +457,8 @@ namespace WindowsFormsApplication1
                     //string CurrentDateTime = ReturnMySQLDateFormat(EnterDate);
                     DateTime date_today = DateTime.Now;
 
-                    // string CurrentDate = date_today.ToString("yyyy-MM-dd hh:mm:ss");
-                    string CurrentDate = ConvertTo24Hours(DateTime.Now);
+                    string CurrentDate = date_today.ToString("yyyy-MM-dd hh:mm:ss");
+
                     ProgState.AppendText(String.Format("Current Date is {0} \n", CurrentDate));
                     string InsertQuery = String.Format("insert into login values(0,'{0}','{1}')", RFID, CurrentDate);
                     MySqlCommand InsertIntoLoginTable = new MySqlCommand(InsertQuery, DatabaseConnection);
@@ -473,8 +466,8 @@ namespace WindowsFormsApplication1
                     //execute the query 
                     InsertIntoLoginTable.ExecuteNonQuery();
 
-
-                    ProgState.AppendText("finishing database insertion to login table \n");
+                    
+                   ProgState.AppendText("finishing database insertion to login table \n");
                 }
 
             }
@@ -495,7 +488,7 @@ namespace WindowsFormsApplication1
                 }
                 //if the RFID doesn't exist in db then send to serial port 'D'
                 //this char means do not open the door 
-
+                
                 ProgState.AppendText(String.Format("this RFID {0} does not exist in the db, do not open the door \n", RFID));
                 // status_line.Text = String.Format("this {0} does not exist in the db, do not open the door ", RFID);
             }
@@ -518,41 +511,41 @@ namespace WindowsFormsApplication1
         /// </summary>
         /// <param name="d"></param>
         /// <returns></returns>
-        //static string ReturnMySQLDateFormat(DateTime d)
-        //{
-        //    return String.Format("{0} {1}", d.ToString().Split(' ')[0], d.ToString().Split(' ')[1]);
-        //}
+        static string ReturnMySQLDateFormat(DateTime d)
+        {
+            return String.Format("{0} {1}", d.ToString().Split(' ')[0], d.ToString().Split(' ')[1]);
+        }
 
         /// <summary>
         /// this function is going to convert a string into datetime format inorder to compare it and other things 
         /// </summary>
         /// <param name="Date"></param>
         /// <returns></returns>
-        /*  private DateTime ConvertStringToDate(String Date)
-          {
-              int year, month, day, hour, minit, second;
-              year = int.Parse(Date.Split(' ')[0].Split('-')[0]);
-              month = int.Parse(Date.Split(' ')[0].Split('-')[1]);
-              day = int.Parse(Date.Split(' ')[0].Split('-')[2]);
-              hour = int.Parse(Date.Split(' ')[1].Split(':')[0]);
-              minit = int.Parse(Date.Split(' ')[1].Split(':')[1]);
-              second = int.Parse(Date.Split(' ')[1].Split(':')[2]);
-              DateTime d = new DateTime(year, month, day, hour, minit, second);
-              return d;
-          }
-          */
+        private DateTime ConvertStringToDate(String Date)
+        {
+            int year, month, day, hour, minit, second;
+            year = int.Parse(Date.Split(' ')[0].Split('-')[0]);
+            month = int.Parse(Date.Split(' ')[0].Split('-')[1]);
+            day = int.Parse(Date.Split(' ')[0].Split('-')[2]);
+            hour = int.Parse(Date.Split(' ')[1].Split(':')[0]);
+            minit = int.Parse(Date.Split(' ')[1].Split(':')[1]);
+            second = int.Parse(Date.Split(' ')[1].Split(':')[2]);
+            DateTime d = new DateTime(year, month, day, hour, minit, second);
+            return d;
+        }
+
         /// <summary>
         /// this function convert the date type into string 
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
-        /* static string ConvertDateToString(DateTime date)
-         {
-             string ret = String.Format("{0}-{1}-{2} {3}:{4}:{5}", date.Year,
-                 date.Month, date.Day, date.Hour, date.Minute, date.Second);
-             return ret;
-         }
-         */
+        static string ConvertDateToString(DateTime date)
+        {
+            string ret = String.Format("{0}-{1}-{2} {3}:{4}:{5}", date.Year,
+                date.Month, date.Day, date.Hour, date.Minute, date.Second);
+            return ret;
+        }
+
         /// <summary>
         /// stop process of receiving RFIDs from serial port 
         /// </summary>
@@ -588,7 +581,7 @@ namespace WindowsFormsApplication1
             TimeSpan t = t1.Subtract(t2);
 
             //return the difference 
-            return Math.Round(Math.Abs(t.TotalMinutes));
+            return Math.Abs(t.TotalMinutes);
         }
 
         /// <summary>
@@ -599,13 +592,11 @@ namespace WindowsFormsApplication1
         /// <returns>how much this cost </returns>
         private double CalculateMoney(DateTime EnterDate, DateTime LeaveDate)
         {
-           // ProgState.AppendText("\n" + EnterDate + "  ,," + LeaveDate + "\n");
-          //  MessageBox.Show(EnterDate + "  ,," + LeaveDate);
-            // DollarPerMinuit = 5;
+
+            int DollarPerMinuit = 5;
             double Duration = TakeDateTimeDifference(LeaveDate, EnterDate);
             return Math.Abs(Duration * DollarPerMinuit);
         }
-
 
         /// <summary>
         /// this is the handler of the button test Button
@@ -634,8 +625,8 @@ namespace WindowsFormsApplication1
         private void SendUserEmail(string To, double Discount, double Duration, DateTime LoginDate, DateTime LeaveDate)
         {
 
-            string Subject = "Hello";
-            string Body = "Hi Hafiz";
+            string Subject = "";
+            string Body = "";
 
             //using smtp client 
             SmtpClient client = new SmtpClient("smtp.gmail.com");
@@ -647,12 +638,12 @@ namespace WindowsFormsApplication1
             client.UseDefaultCredentials = false;
 
             //change here, you have to have valid email address and password 
-            client.Credentials = new NetworkCredential("smart.parking.system.naja@gmail.com", "smartparkingsystem");
+            client.Credentials = new NetworkCredential("yourid@gmail.com", "yourgmailpassword");
 
             MailMessage msg = new MailMessage();
 
             msg.To.Add(To);
-            msg.From = new MailAddress("smart.parking.system.najah@gmail.com");
+            msg.From = new MailAddress("yourid@gmail.com");
             msg.Subject = Subject;
 
             msg.Body = Body;
@@ -669,7 +660,7 @@ namespace WindowsFormsApplication1
         /// <param name="userPhoneNumber"></param>
         /// <param name="userEmail"></param>
         /// <param name="UserCeditMoney"></param>
-        private void UpdateUserInformation(string Username, string userRFID, string userPhoneNumber, string userEmail,
+        private void UpdateUserInformation(string Username, string userRFID, string userPhoneNumber, string userEmail, 
                                             string UserCeditMoney)
         {
             UserName.Text = Username;
@@ -694,27 +685,6 @@ namespace WindowsFormsApplication1
 
             //show the dialog 
             NewUser.ShowDialog();
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            SendUserEmail("hkmmi.2010@gmail.com", 50, 50, new DateTime(2014, 4, 5, 1, 2, 3), new DateTime(2014, 4, 5, 5, 2, 3));
-        }
-
-        /// <summary>
-        /// this function is going 
-        /// </summary>
-        /// <param name="Date"></param>
-        /// <returns></returns>
-        private string ConvertTo24Hours(DateTime Date)
-        {
-            string strDate1 = Date.ToString();
-            DateTime date1 = DateTime.ParseExact(strDate1, "M/d/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
-            string strDate2 = date1.ToString("yyyy-MM-dd H:mm:ss");
-            //  Console.WriteLine(strDate2);
-
-            return strDate2;
-
         }
     }
 }
